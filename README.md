@@ -26,20 +26,28 @@ Follow these steps to set up the project:
    git clone [https://github.com/ThilinaLakmal/playwright-test-assignment]
 
 2. **Navigate to the Project Folder Open your terminal and move into the project directory:**
+   ```bash
    cd IT23160798
+   ```
 
-3. **Install Dependencies Run the following command to install the required Node.js packages:**
+4. **Install Dependencies Run the following command to install the required Node.js packages:**
+   ```bash
    npm install
+   ```
 
-4. **Install Playwright Browsers This downloads the necessary browser binaries (Chromium, Firefox, WebKit):**
+6. **Install Playwright Browsers This downloads the necessary browser binaries (Chromium, Firefox, WebKit):**
+   ```bash
    npx playwright install
+   ```
 
 
 ## How to Run the Tests
 
 # Run with Browser Visible
 This runs the tests in "Headed" mode using Google Chrome (Chromium) so, you can watch the automation happening.
+```bash
 npx playwright test --project=chromium --headed
+ ```
 
 
 ## Viewing the Test Report
