@@ -7,24 +7,24 @@ const CONFIG = {
   url: 'https://www.swifttranslator.com/',
   timeouts: {
     pageLoad: 5000,
-    translation: 5000, // Increased wait time
-    betweenTests: 5000
+    translation: 6000, 
+    betweenTests: 1500
   },
   selectors: {
-    inputField: 'textarea', // The input is a simple textarea
-    // The output is a DIV with specific styling (taken from your friend's working code)
+    inputField: 'textarea', 
     outputField: 'div.w-full.h-80.p-3.rounded-lg.ring-1.ring-slate-300.whitespace-pre-wrap'
   }
 };
-// INCREASE GLOBAL TIMEOUT TO 2 MINUTES (Fixes the "30000ms exceeded" error)
+
+// GLOBAL TIMEOUT (2 Minutes)
 test.setTimeout(120000);
 
 // ------------------------------------------------------------------
-// 2. TEST DATA (Your Specific Cases)
+// 2. TEST DATA
 // ------------------------------------------------------------------
 const TEST_DATA = {
   positive: [
-    {id: "Pos_Fun_0001", input: "mama raeeta pothak kiyavanavaa.", expected: "මම රෑට පොතක් කියවනවා." },
+     {id: "Pos_Fun_0001", input: "mama raeeta pothak kiyavanavaa.", expected: "මම රෑට පොතක් කියවනවා." },
     { id: "Pos_Fun_0002", input: "mata dhaenma yanna baehae, mokadha mata vaedak thiyenavaa ivara karanna.", expected: "මට දැන්ම යන්න බැහැ, මොකද මට වැඩක් තියෙනවා ඉවර කරන්න." },
     { id: "Pos_Fun_0003", input: "vaessa vahina nisaa api adha gedhara innavaa.", expected: "වැස්ස වහින නිසා අපි අද ගෙදර ඉන්නවා." },
     { id: "Pos_Fun_0004", input: "oyaa heta apee gedhara enavaadha?", expected: "ඔයා හෙට අපේ ගෙදර එනවාද?" },
@@ -50,7 +50,7 @@ const TEST_DATA = {
     { id: "Pos_Fun_0024", input: "apita jiivithayeedhii viviDha vuu kadayim pasu kiriimata sidhu venavaa...", expected: "අපිට ජීවිතයේදී විවිධ වූ කඩයිම් පසු කිරීමට සිදු වෙනවා..." },
     { id: "Pos_Fun_0025", input: "eeka 30m vithara usa gahak.", expected: "ඒක 30m විතර උස ගහක්." } ],
   negative: [
-    { id: "Neg_Fun_0001", input: "mama eeka miladhii gaththee daraz eken", expected: "මම ඒක මිලදී ගත්තේ daraz එකෙන්" },
+     { id: "Neg_Fun_0001", input: "mama eeka miladhii gaththee daraz eken", expected: "මම ඒක මිලදී ගත්තේ daraz එකෙන්" },
     { id: "Neg_Fun_0002", input: "Photo eka jpg format eken evanna", expected: "Photo එක jpg format එකෙන් එවන්න" },
     { id: "Neg_Fun_0003", input: "api nitharama courseweb eka gaena update ekee imu.", expected: "අපි නිතරම courseweb එක ගැන update එකේ ඉමු." },
     { id: "Neg_Fun_0004", input: "Sri Lanka kiyannee indhiyan saagarayee muthu aetayayi.", expected: "Sri Lanka කියන්නේ ඉන්දියන් සාගරයේ මුතු ඇටයයි" },
@@ -60,11 +60,21 @@ const TEST_DATA = {
     { id: "Neg_Fun_0008", input: "mama aasama nissan raThayakata. ", expected: "මම ආසම nissan රථයකට." },
     { id: "Neg_Fun_0009", input: "Mern stack project ekaka frontend eka saha backend eka vena venama run kala yuthuya.", expected: "Mern stack project එකක frontend එක සහ backend එක වෙන වෙනම run කල යුතුය." },
     { id: "Neg_Fun_0010", input: "ema maadhiliya siyaluma softlogic pradharshanaagaara valin labaa gatha haeka.", expected: "එම මාදිලිය සියලුම softlogic ප්‍රදර්ශනාගාර වලින් ලබා ගත හැක." },
-    { id: "Neg_Fun_0011", input: "ammaa thaniyama ehe yannee kohomdha?", expected: "අම්මා තනියම එහෙ යන්නේ කොහොමද?" }]
+    { id: "Neg_Fun_0011", input: "ammaa thaniyama ehe yannee kohomdha?", expected: "අම්මා තනියම එහෙ යන්නේ කොහොමද?" }
+  ],
+  // NEW UI DATA SECTION
+  ui: [
+    { 
+      id: 'Pos_UI_0001', 
+      input: 'siqq', 
+      suggestion: 'සිංහල', 
+      expected: 'සිංහල' 
+    }
+  ]
 };
 
 // ------------------------------------------------------------------
-// 3. PAGE OBJECT (The Helper Class)
+// 3. PAGE OBJECT (Helper Class)
 // ------------------------------------------------------------------
 class TranslatorPage {
   constructor(page) {
@@ -73,7 +83,7 @@ class TranslatorPage {
 
   async navigateToSite() {
     await this.page.goto(CONFIG.url);
-    await this.page.waitForLoadState('networkidle'); // Wait for network to settle
+    await this.page.waitForLoadState('networkidle'); 
   }
 
   async clearAndWait() {
@@ -83,28 +93,36 @@ class TranslatorPage {
     await this.page.waitForTimeout(500);
   }
 
+  // Method 1: For Normal Tests (Type + Space + Tab)
   async performTranslation(text) {
     const input = this.page.locator(CONFIG.selectors.inputField).first();
-    
-    // 1. Type
     await input.pressSequentially(text, { delay: 100 });
-    
-    // 2. Trigger (Space key + Click on Body)
     await this.page.keyboard.press('Space');
-    await this.page.waitForTimeout(500);
-    await this.page.locator('body').click({ position: { x: 0, y: 0 } });
+    await this.page.waitForTimeout(300);
+    await input.press('Tab'); 
+    await this.page.waitForTimeout(CONFIG.timeouts.translation);
+  }
+
+  // Method 2: NEW Method for UI Test (Type Partial + Click Dropdown)
+  async performDropdownSelection(inputText, suggestionText) {
+    const input = this.page.locator(CONFIG.selectors.inputField).first();
     
-    // 3. Wait for Output to appear
+    // 1. Type the partial text (e.g., 'bath')
+    await input.pressSequentially(inputText, { delay: 150 });
+    
+    // 2. Wait for the dropdown to likely appear
+    await this.page.waitForTimeout(2000);
+
+    // 3. Click the suggestion from the list
+    // We look for text strictly visible on the page
+    await this.page.getByText(suggestionText).first().click();
+
+    // 4. Wait for update
     await this.page.waitForTimeout(CONFIG.timeouts.translation);
   }
 
   async getActualOutput() {
-    // This selector is from your friend's code which worked correctly
-    // It targets the specific DIV class that holds the output
     const outputLocator = this.page.locator(CONFIG.selectors.outputField);
-
-    // Filter to ensure we don't accidentally grab the input textarea
-    // We want the DIV that is NOT the textarea
     const correctOutputBox = outputLocator.filter({ hasNot: this.page.locator('textarea') }).first();
 
     let actualText = "";
@@ -113,7 +131,6 @@ class TranslatorPage {
     } catch (e) {
       actualText = "Error: Could not find output box";
     }
-
     return actualText ? actualText.trim() : "";
   }
 }
@@ -137,7 +154,6 @@ test.describe('Assignment 1 - SwiftTranslator Automation', () => {
         await translator.performTranslation(tc.input);
         const actual = await translator.getActualOutput();
         
-        // Console Reporting
         const isMatch = actual.includes(tc.expected);
         console.log(`\nFor ${tc.id}:`);
         console.log(`Input Box has: "${tc.input}"`);
@@ -146,7 +162,6 @@ test.describe('Assignment 1 - SwiftTranslator Automation', () => {
         console.log(`Comparison:    ${isMatch ? 'Match! (Pass)' : 'No Match! (Fail)'}`);
         console.log('--------------------------------------------------');
 
-        // Assertion
         expect(actual).toContain(tc.expected);
       });
     }
@@ -160,7 +175,6 @@ test.describe('Assignment 1 - SwiftTranslator Automation', () => {
         await translator.performTranslation(tc.input);
         const actual = await translator.getActualOutput();
         
-        // Console Reporting
         const isMatch = actual.includes(tc.expected);
         console.log(`\nFor ${tc.id}:`);
         console.log(`Input Box has: "${tc.input}"`);
@@ -169,7 +183,31 @@ test.describe('Assignment 1 - SwiftTranslator Automation', () => {
         console.log(`Comparison:    ${isMatch ? 'Match! (Pass)' : 'No Match! (Fail)'}`);
         console.log('--------------------------------------------------');
 
-        // Assertion
+        expect(actual).toContain(tc.expected);
+      });
+    }
+  });
+
+  // --- NEW: UI FUNCTIONAL TESTS ---
+  test.describe('UI Functional Tests', () => {
+    for (const tc of TEST_DATA.ui) {
+      test(`${tc.id}: Suggestion Dropdown "${tc.input}" -> "${tc.suggestion}"`, async () => {
+        await translator.clearAndWait();
+        
+        // Use the new Dropdown Method
+        await translator.performDropdownSelection(tc.input, tc.suggestion);
+        
+        const actual = await translator.getActualOutput();
+        
+        const isMatch = actual.includes(tc.expected);
+        console.log(`\nFor ${tc.id}:`);
+        console.log(`Typed Input:   "${tc.input}"`);
+        console.log(`Selected:      "${tc.suggestion}"`);
+        console.log(`Expected Out:  "${tc.expected}"`);
+        console.log(`Actual Out:    "${actual}"`);
+        console.log(`Comparison:    ${isMatch ? 'Match! (Pass)' : 'No Match! (Fail)'}`);
+        console.log('--------------------------------------------------');
+
         expect(actual).toContain(tc.expected);
       });
     }
